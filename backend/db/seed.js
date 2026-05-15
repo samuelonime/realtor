@@ -6,7 +6,7 @@ const sequelize = new Sequelize(
   process.env.DB_NAME,
   process.env.DB_USER,
   process.env.DB_PASSWORD,
-  {   host: process.env.DB_HOST, port: process.env.DB_PORT, dialect: 'postgres', logging: console.log, dialectOptions: { ssl: { require: true, rejectUnauthorized: false } } }
+  { host: process.env.DB_HOST, port: process.env.DB_PORT, dialect: 'mysql', logging: console.log }
 );
 
 const seed = async () => {
@@ -17,7 +17,7 @@ const seed = async () => {
     // Create roles
     const roles = ['admin', 'manager', 'agent'];
     for (const name of roles) {
-      await sequelize.query('INSERT INTO roles (name) VALUES (:name) ON CONFLICT (name) DO NOTHING', {
+      await sequelize.query('INSERT IGNORE INTO roles (name) VALUES (:name)', {
         replacements: { name },
       });
     }
@@ -26,7 +26,7 @@ const seed = async () => {
     // Create lead sources
     const sources = ['Facebook Ads', 'Referral', 'WhatsApp', 'Walk-in', 'Instagram', 'Website', 'Phone Call', 'Email', 'Other'];
     for (const name of sources) {
-      await sequelize.query('INSERT INTO lead_sources (name) VALUES (:name) ON CONFLICT (name) DO NOTHING', {
+      await sequelize.query('INSERT IGNORE INTO lead_sources (name) VALUES (:name)', {
         replacements: { name },
       });
     }
@@ -35,9 +35,8 @@ const seed = async () => {
     // Create admin user
     const passwordHash = bcrypt.hashSync('password123', 10);
     await sequelize.query(
-      `INSERT INTO users (full_name, email, phone, password_hash, role_id)
-       VALUES (:name, :email, :phone, :password, :role_id)
-       ON CONFLICT (email) DO NOTHING`,
+      `INSERT IGNORE INTO users (full_name, email, phone, password_hash, role_id)
+       VALUES (:name, :email, :phone, :password, :role_id)`,
       {
         replacements: {
           name: 'Admin User',
@@ -51,9 +50,8 @@ const seed = async () => {
 
     // Create sample agent
     await sequelize.query(
-      `INSERT INTO users (full_name, email, phone, password_hash, role_id)
-       VALUES (:name, :email, :phone, :password, :role_id)
-       ON CONFLICT (email) DO NOTHING`,
+      `INSERT IGNORE INTO users (full_name, email, phone, password_hash, role_id)
+       VALUES (:name, :email, :phone, :password, :role_id)`,
       {
         replacements: {
           name: 'Agent One',
