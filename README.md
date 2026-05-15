@@ -1,6 +1,6 @@
 # RealEstate CRM — Production Ready
 
-A full-stack CRM system for real estate agencies. Built with **Next.js 14** (frontend) and **Node.js/Express + Sequelize** (backend), backed by **MySQL**.
+A full-stack CRM system for real estate agencies. Built with **Next.js 14** (frontend) and **Node.js/Express + Sequelize** (backend), backed by **PostgreSQL**.
 
 ## Features
 
@@ -28,14 +28,14 @@ A full-stack CRM system for real estate agencies. Built with **Next.js 14** (fro
 
 ### Prerequisites
 - Node.js 18+
-- MySQL 8.0
+- PostgreSQL 14+
 
 ### Backend
 ```bash
 cd backend
 cp .env.example .env          # edit DB credentials and JWT secret
 npm install
-mysql -u root -p < db/schema.sql
+createdb realestate_crm       # or via psql: CREATE DATABASE realestate_crm;
 npm run seed                   # creates admin@crm.com / password123
 npm run dev
 ```
@@ -76,6 +76,61 @@ docker compose exec backend node db/seed.js
 
 ---
 
+## Render Deployment (Free Tier)
+
+### Step 1: Push to GitHub
+```bash
+git init
+git add .
+git commit -m "Initial commit"
+# Create repo on GitHub, then:
+git remote add origin https://github.com/yourusername/realtor-crm.git
+git push -u origin main
+```
+
+### Step 2: Create PostgreSQL Database
+1. Go to [dashboard.render.com](https://dashboard.render.com) → **New +** → **PostgreSQL**
+2. Name: `realtor-crm-db`, Free plan
+3. After creation, copy the **Internal Database URL**
+
+### Step 3: Deploy Backend Web Service
+1. **New +** → **Web Service** → Connect your GitHub repo
+2. Configure:
+
+| Field | Value |
+|---|---|
+| **Name** | `realtor-crm-api` |
+| **Root Directory** | `backend` |
+| **Runtime** | Node |
+| **Build Command** | `npm install` |
+| **Start Command** | `npm start` |
+| **Plan** | Free |
+
+3. Add **Environment Variables**:
+   - `DATABASE_URL` → paste the Internal Database URL from Step 2
+   - `JWT_SECRET` → run `openssl rand -hex 32` to generate
+   - `JWT_EXPIRES_IN` → `7d`
+
+4. Click **Create Web Service**
+
+### Step 4: Seed the Database
+After deploy completes → Render dashboard → **Shell** tab → run:
+```bash
+node db/seed.js
+```
+
+### Step 5: Deploy Frontend
+Deploy on Vercel (recommended for Next.js):
+1. Push code to GitHub
+2. Go to [vercel.com](https://vercel.com) → Import repo
+3. Root Directory: `frontend`
+4. Add env var: `NEXT_PUBLIC_API_URL=https://realtor-crm-api.onrender.com/api`
+5. Deploy
+
+**Your API URL:** `https://realtor-crm-api.onrender.com/api`
+
+---
+
 ## Environment Variables
 
 ### Backend (`.env`)
@@ -83,9 +138,10 @@ docker compose exec backend node db/seed.js
 |---|---|---|
 | `NODE_ENV` | Environment | `development` |
 | `PORT` | API port | `5000` |
-| `DB_HOST` | MySQL host | `localhost` |
+| `DATABASE_URL` | Full connection URL (Render) | — |
+| `DB_HOST` | PostgreSQL host | `localhost` |
 | `DB_NAME` | Database name | `realestate_crm` |
-| `DB_USER` | DB user | `root` |
+| `DB_USER` | DB user | `postgres` |
 | `DB_PASSWORD` | DB password | — |
 | `JWT_SECRET` | JWT signing secret (min 32 chars) | — |
 | `JWT_EXPIRES_IN` | Token expiry | `7d` |
@@ -137,7 +193,7 @@ docker compose exec backend node db/seed.js
 |---|---|
 | Frontend | Next.js 14, React 18, Tailwind CSS, Chart.js |
 | Backend | Node.js, Express 4, Sequelize 6 |
-| Database | MySQL 8.0 |
+| Database | PostgreSQL 14 |
 | Auth | JWT (jsonwebtoken) + bcryptjs |
 | Security | Helmet, express-rate-limit, CORS |
 | DevOps | Docker, Docker Compose |
