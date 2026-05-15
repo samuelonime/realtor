@@ -4,7 +4,7 @@ module.exports = (sequelize, DataTypes) => {
     action: { type: DataTypes.STRING, allowNull: false },
     entity_type: { type: DataTypes.STRING },
     entity_id: { type: DataTypes.INTEGER },
-    details: { type: DataTypes.TEXT }, -- JSON string
+    details: { type: DataTypes.TEXT },
     ip_address: { type: DataTypes.STRING },
   }, {
     tableName: 'audit_logs',
