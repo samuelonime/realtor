@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { api } from '../lib/api';
 
@@ -10,40 +10,40 @@ export function AuthProvider({ children }) {
   const router = useRouter();
 
   useEffect(() => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    const token = localStorage.getItem('token');
     if (token) {
       api.getMe()
-        .then(setUser)
+        .then((data) => setUser(data))
         .catch(() => {
           localStorage.removeItem('token');
-          if (router.pathname !== '/') router.push('/');
+          if (router.pathname !== '/' && router.pathname !== '/login') {
+            router.push('/login');
+          }
         })
         .finally(() => setLoading(false));
     } else {
       setLoading(false);
-      if (router.pathname !== '/') router.push('/');
+      if (router.pathname !== '/' && router.pathname !== '/login') {
+        router.push('/login');
+      }
     }
   }, []);
 
-  const login = useCallback(async (email, password) => {
+  const login = async (email, password) => {
     const data = await api.login({ email, password });
     localStorage.setItem('token', data.token);
     setUser(data.user);
     return data;
-  }, []);
+  };
 
-  const logout = useCallback(() => {
+  const logout = () => {
     localStorage.removeItem('token');
     setUser(null);
-    router.push('/');
-  }, [router]);
-
-  const updateUser = useCallback((updates) => {
-    setUser(prev => ({ ...prev, ...updates }));
-  }, []);
+    router.push('/login');
+  };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, loading, updateUser }}>
+    <AuthContext.Provider value={{ user, login, logout, loading }}>
       {children}
     </AuthContext.Provider>
   );
