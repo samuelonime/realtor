@@ -1,0 +1,80 @@
+version: '3.9'
+
+services:
+  db:
+    image: mysql:8.0
+    container_name: crm_db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME:-realestate_crm}
+      MYSQL_USER: ${DB_USER:-crm_user}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./backend/db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    ports:
+      - "3306:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - crm_network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: crm_backend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 5000
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_NAME: ${DB_NAME:-realestate_crm}
+      DB_USER: ${DB_USER:-crm_user}
+      DB_PASSWORD: ${DB_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:3000}
+    volumes:
+      - uploads_data:/app/uploads
+    ports:
+      - "5000:5000"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - crm_network
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:5000/api/health', r => process.exit(r.statusCode === 200 ? 0 : 1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: crm_frontend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:5000/api}
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    networks:
+      - crm_network
+
+volumes:
+  db_data:
+  uploads_data:
+
+networks:
+  crm_network:
+    driver: bridge

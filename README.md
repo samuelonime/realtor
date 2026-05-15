@@ -1,257 +1,143 @@
-# RealEstate CRM
+# RealEstate CRM — Production Ready
 
-A simple, production-ready Real Estate CRM Web Application built for Nigerian real estate companies. Replaces scattered WhatsApp chats and Excel sheets with a clean, structured SaaS platform.
+A full-stack CRM system for real estate agencies. Built with **Next.js 14** (frontend) and **Node.js/Express + Sequelize** (backend), backed by **MySQL**.
 
-## Tech Stack
+## Features
 
-- **Frontend:** Next.js 14 (Pages Router), Tailwind CSS, Chart.js
-- **Backend:** Node.js, Express.js, Sequelize ORM
-- **Database:** MySQL 8+
-- **Auth:** JWT (JSON Web Tokens), bcrypt password hashing
+### Core Modules
+- **Leads** — Pipeline management with 7 stages, auto-assignment, notes, follow-up scheduling, bulk operations
+- **Properties** — Inventory with images, status tracking (available/reserved/sold), multi-filter
+- **Deals** — Sales pipeline linking leads to properties with stage tracking and payment balance
+- **Payments** — Installment tracking with auto-close when fully paid
+- **Documents** — Property document management with verification workflow (C of O, Survey Plans, Deeds)
+- **Users** — Role-based access control: Admin, Manager, Agent
 
-## Modules
+### Production Additions (v1.1)
+- **Reports & Analytics** — Monthly revenue trends, lead funnel, agent leaderboard, property performance
+- **Notification Bell** — Real-time follow-up reminders, overdue alerts, pending document badges
+- **Profile Page** — Account info + password change
+- **Rate Limiting** — Global (500 req/15min) + auth endpoint (20 req/15min)
+- **Security** — Helmet.js headers, CORS allowlist, JWT expiry, bcrypt password hashing
+- **Compression** — Gzip/brotli via compression middleware
+- **Graceful Shutdown** — SIGTERM/SIGINT handlers with DB connection cleanup
+- **Structured Logging** — morgan access logs + internal logger utility
+- **Docker** — Multi-stage Dockerfiles for backend and frontend
+- **Docker Compose** — Full stack deployment with health checks
 
-1. **Lead Management** — Capture, assign, and track leads through a sales pipeline
-2. **Property Management** — List and manage property inventory with image support
-3. **Sales Pipeline (Deals)** — Track deals from inspection to closing
-4. **Payments & Installments** — Record payments and track installment plans
-5. **Document Tracking** — Upload and verify property documents (C of O, Survey Plan, etc.)
-
-## Quick Start
+## Quick Start (Development)
 
 ### Prerequisites
-
 - Node.js 18+
-- MySQL 8+
-- npm
+- MySQL 8.0
 
-### 1. Clone & Install
-
+### Backend
 ```bash
-# Backend
 cd backend
+cp .env.example .env          # edit DB credentials and JWT secret
 npm install
-
-# Frontend
-cd ../frontend
-npm install
-```
-
-### 2. Database Setup
-
-```bash
-# Create the database
-mysql -u root -p < backend/db/schema.sql
-
-# Or run the seed script (creates tables + sample data)
-cd backend
-npm run seed
-```
-
-### 3. Configure Environment
-
-```bash
-# Backend (backend/.env)
-PORT=5000
-DB_HOST=localhost
-DB_PORT=3306
-DB_NAME=realestate_crm
-DB_USER=root
-DB_PASSWORD=yourpassword
-JWT_SECRET=your-secret-key-change-this
-JWT_EXPIRES_IN=7d
-```
-
-### 4. Run the Application
-
-```bash
-# Terminal 1 - Backend
-cd backend
+mysql -u root -p < db/schema.sql
+npm run seed                   # creates admin@crm.com / password123
 npm run dev
+```
 
-# Terminal 2 - Frontend
+### Frontend
+```bash
 cd frontend
+cp .env.local.example .env.local  # set NEXT_PUBLIC_API_URL
+npm install
 npm run dev
 ```
 
-### 5. Login
+Open [http://localhost:3000](http://localhost:3000)
 
-Open http://localhost:3000 and login with:
+**Default credentials:** `admin@crm.com` / `password123`
+> ⚠️ Change the password immediately after first login.
 
-| Role | Email | Password |
-|------|-------|----------|
-| Admin | admin@crm.com | password123 |
-| Agent | agent@crm.com | password123 |
+---
 
-## Default Users
+## Docker Deployment
 
-After seeding, the following users are created:
-- **Admin** - admin@crm.com / password123
-- **Agent** - agent@crm.com / password123
+```bash
+cp .env.example .env
+# Edit .env with strong secrets
 
-Lead sources are also pre-seeded: Facebook Ads, Referral, WhatsApp, Walk-in, Instagram, Website, Phone Call, Email, Other.
-
-## Project Structure
-
+docker compose up -d --build
 ```
-realtor/
-├── backend/
-│   ├── config/          # DB configuration
-│   ├── controllers/     # Route handlers
-│   ├── middleware/       # Auth, audit logging
-│   ├── models/          # Sequelize models
-│   ├── routes/          # Express routes
-│   ├── db/              # Schema & seed scripts
-│   ├── uploads/         # File uploads
-│   ├── server.js        # Entry point
-│   └── package.json
-├── frontend/
-│   ├── components/      # Shared components (Layout, Sidebar)
-│   ├── context/         # Auth context
-│   ├── lib/             # API client
-│   ├── pages/           # Next.js pages
-│   │   ├── index.js     # Login page
-│   │   ├── dashboard.js # Admin dashboard
-│   │   ├── leads/       # Lead management
-│   │   ├── properties/  # Property management
-│   │   ├── deals/       # Deal pipeline
-│   │   ├── payments/    # Payment tracking
-│   │   ├── documents/   # Document management
-│   │   └── users/       # User management (admin)
-│   └── styles/          # Global CSS
-└── README.md
+
+The app will be available at:
+- Frontend: `http://your-server:3000`
+- API: `http://your-server:5000/api`
+- Health: `http://your-server:5000/api/health`
+
+### Run database seed after first launch:
+```bash
+docker compose exec backend node db/seed.js
 ```
+
+---
+
+## Environment Variables
+
+### Backend (`.env`)
+| Variable | Description | Default |
+|---|---|---|
+| `NODE_ENV` | Environment | `development` |
+| `PORT` | API port | `5000` |
+| `DB_HOST` | MySQL host | `localhost` |
+| `DB_NAME` | Database name | `realestate_crm` |
+| `DB_USER` | DB user | `root` |
+| `DB_PASSWORD` | DB password | — |
+| `JWT_SECRET` | JWT signing secret (min 32 chars) | — |
+| `JWT_EXPIRES_IN` | Token expiry | `7d` |
+| `ALLOWED_ORIGINS` | Comma-separated CORS origins | `http://localhost:3000` |
+| `LOG_LEVEL` | Logging level | `info` |
+
+### Frontend (`.env.local`)
+| Variable | Description | Default |
+|---|---|---|
+| `NEXT_PUBLIC_API_URL` | Backend API URL | `http://localhost:5000/api` |
+
+---
 
 ## API Endpoints
 
-### Auth
-- `POST /api/auth/login` — Login
-- `GET /api/auth/me` — Get current user
-- `PUT /api/auth/change-password` — Change password
+| Resource | Endpoints |
+|---|---|
+| Auth | `POST /auth/login`, `GET /auth/me`, `PUT /auth/change-password` |
+| Leads | Full CRUD + notes, bulk-assign, follow-ups |
+| Properties | Full CRUD + image upload |
+| Deals | Full CRUD |
+| Payments | Full CRUD |
+| Documents | Full CRUD + verification |
+| Users | Full CRUD + agents list |
+| Dashboard | `GET /dashboard` |
+| Reports | Monthly revenue, lead funnel, agent leaderboard, property performance |
+| Notifications | `GET /notifications` |
+| Health | `GET /health` |
 
-### Dashboard
-- `GET /api/dashboard` — Dashboard statistics
+---
 
-### Leads
-- `GET /api/leads` — List leads (with filters)
-- `GET /api/leads/:id` — Get lead details
-- `POST /api/leads` — Create lead
-- `PUT /api/leads/:id` — Update lead
-- `DELETE /api/leads/:id` — Delete lead
-- `POST /api/leads/:id/notes` — Add note to lead
-- `POST /api/leads/bulk-assign` — Bulk assign leads
-- `GET /api/leads/followups` — Get follow-up reminders
-
-### Properties
-- `GET /api/properties` — List properties
-- `GET /api/properties/:id` — Get property details
-- `POST /api/properties` — Create property
-- `PUT /api/properties/:id` — Update property
-- `DELETE /api/properties/:id` — Delete property
-
-### Deals
-- `GET /api/deals` — List deals
-- `GET /api/deals/:id` — Get deal with payments
-- `POST /api/deals` — Create deal
-- `PUT /api/deals/:id` — Update deal stage
-- `DELETE /api/deals/:id` — Delete deal
-
-### Payments
-- `GET /api/payments` — List payments
-- `GET /api/payments/:id` — Get payment
-- `POST /api/payments` — Record payment
-- `DELETE /api/payments/:id` — Delete payment
-
-### Documents
-- `GET /api/documents` — List documents
-- `GET /api/documents/:id` — Get document
-- `POST /api/documents` — Upload document
-- `PUT /api/documents/:id` — Verify/flag document
-- `DELETE /api/documents/:id` — Delete document
-
-### Users
-- `GET /api/users` — List users (admin/manager)
-- `GET /api/users/agents` — List agents
-- `POST /api/users` — Create user (admin)
-- `PUT /api/users/:id` — Update user (admin)
-- `DELETE /api/users/:id` — Deactivate user (admin)
-
-### Sources
-- `GET /api/sources` — List lead sources
-
-## Role-Based Access
+## Roles & Permissions
 
 | Feature | Admin | Manager | Agent |
-|---------|-------|---------|-------|
-| Dashboard | Full | Full | Own |
-| Leads | All | All | Assigned |
-| Properties | All | All | Assigned |
-| Deals | All | All | Own |
-| Payments | All | All | View |
-| Documents | Manage | Manage | Upload |
-| Users | Manage | View | No |
+|---|---|---|---|
+| View own leads/deals | ✅ | ✅ | ✅ |
+| View all leads/deals | ✅ | ✅ | — |
+| Delete leads/properties | ✅ | ✅ | — |
+| Bulk assign leads | ✅ | ✅ | — |
+| View reports | ✅ | ✅ | — |
+| Manage users | ✅ | — | — |
+| Verify documents | ✅ | ✅ | — |
 
-## Deployment
+---
 
-### VPS Deployment (Ubuntu 22.04)
+## Tech Stack
 
-```bash
-# 1. Install dependencies
-sudo apt update && sudo apt install -y nginx mysql-server certbot nodejs npm
-
-# 2. Clone and setup backend
-git clone <repo> /var/www/realtor
-cd /var/www/realtor/backend
-npm install --production
-
-# 3. Setup MySQL database
-sudo mysql -e "CREATE DATABASE realestate_crm;"
-sudo mysql realestate_crm < db/schema.sql
-
-# 4. Setup PM2
-sudo npm install -g pm2
-pm2 start server.js --name realestate-crm-api
-pm2 save && pm2 startup
-
-# 5. Build frontend
-cd /var/www/realtor/frontend
-npm install && npm run build
-
-# 6. Configure Nginx
-sudo nano /etc/nginx/sites-available/realtor-crm
-```
-
-Nginx config:
-```nginx
-server {
-    listen 80;
-    server_name yourdomain.com;
-
-    # Frontend
-    location / {
-        proxy_pass http://localhost:3000;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host $host;
-        proxy_cache_bypass $http_upgrade;
-    }
-
-    # Backend API
-    location /api/ {
-        proxy_pass http://localhost:5000;
-        proxy_http_version 1.1;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-    }
-
-    # Uploads
-    location /uploads/ {
-        proxy_pass http://localhost:5000;
-    }
-}
-```
-
-## License
-
-MIT
+| Layer | Technology |
+|---|---|
+| Frontend | Next.js 14, React 18, Tailwind CSS, Chart.js |
+| Backend | Node.js, Express 4, Sequelize 6 |
+| Database | MySQL 8.0 |
+| Auth | JWT (jsonwebtoken) + bcryptjs |
+| Security | Helmet, express-rate-limit, CORS |
+| DevOps | Docker, Docker Compose |

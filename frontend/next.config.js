@@ -1,11 +1,23 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  output: 'standalone',
   reactStrictMode: true,
-  async rewrites() {
+  poweredByHeader: false,
+  images: {
+    remotePatterns: [
+      { protocol: 'http', hostname: 'localhost', port: '5000', pathname: '/uploads/**' },
+      { protocol: 'https', hostname: '**', pathname: '/uploads/**' },
+    ],
+  },
+  async headers() {
     return [
       {
-        source: '/api/:path*',
-        destination: 'http://localhost:5000/api/:path*',
+        source: '/(.*)',
+        headers: [
+          { key: 'X-Frame-Options', value: 'DENY' },
+          { key: 'X-Content-Type-Options', value: 'nosniff' },
+          { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+        ],
       },
     ];
   },

@@ -1,5 +1,12 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
+class ApiError extends Error {
+  constructor(message, status) {
+    super(message);
+    this.status = status;
+  }
+}
+
 async function request(endpoint, options = {}) {
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
 
@@ -14,13 +21,23 @@ async function request(endpoint, options = {}) {
 
   if (config.body && typeof config.body === 'object' && !(config.body instanceof FormData)) {
     config.body = JSON.stringify(config.body);
+    if (config.body instanceof FormData) delete config.headers['Content-Type'];
   }
 
   const res = await fetch(`${API_URL}${endpoint}`, config);
+
+  if (res.status === 401) {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('token');
+      window.location.href = '/';
+    }
+    throw new ApiError('Session expired. Please log in again.', 401);
+  }
+
   const data = await res.json();
 
   if (!res.ok) {
-    throw new Error(data.error || 'Request failed');
+    throw new ApiError(data.error || 'Request failed', res.status);
   }
 
   return data;
@@ -34,6 +51,15 @@ export const api = {
 
   // Dashboard
   getDashboard: () => request('/dashboard'),
+
+  // Notifications
+  getNotifications: () => request('/notifications'),
+
+  // Reports
+  getMonthlyRevenue: (months) => request(`/reports/monthly-revenue?months=${months || 12}`),
+  getLeadFunnel: () => request('/reports/lead-funnel'),
+  getAgentLeaderboard: () => request('/reports/agent-leaderboard'),
+  getPropertyPerformance: () => request('/reports/property-performance'),
 
   // Leads
   getLeads: (params) => request(`/leads${params ? '?' + new URLSearchParams(params) : ''}`),
